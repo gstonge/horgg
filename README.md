@@ -1,2 +1,2 @@
-# horggen
-Higher-Order Random Graph Generator
+# horgg
+Library for higher-order random graph generation.
