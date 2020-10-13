@@ -72,7 +72,7 @@ public:
             const GroupSizeSequence& group_size_sequence);
 
     //graph generation methods
-    Output get_graph(unsigned int mcmc_step=0);
+    Output get_graph(unsigned int mcmc_step=0, unsigned int max_attempts=1000);
 
 private:
     bool is_bigraphic(const std::vector<unsigned int>& seq1,
