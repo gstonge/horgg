@@ -83,7 +83,8 @@ BipartiteConfigurationModelSampler::BipartiteConfigurationModelSampler(
 }
 
 //generate a random bipartite graph
-Output BipartiteConfigurationModelSampler::get_graph(unsigned int mcmc_step)
+Output BipartiteConfigurationModelSampler::get_graph(unsigned int mcmc_step,
+        unsigned int max_attempts)
 {
     //shuffle the stub vectors and get an edge list
     shuffle(group_stub_vector_.begin(),group_stub_vector_.end(),gen_);
@@ -126,8 +127,15 @@ Output BipartiteConfigurationModelSampler::get_graph(unsigned int mcmc_step)
         for(int i = 0; i < mcmc_step; i++)
         {
             bool new_link = false;
+            unsigned int counter = 0;
             while (not new_link)
             {
+                if (counter == max_attempts)
+                {
+                   throw runtime_error(
+                           "Maximal number of edge swap attempts reached");
+                }
+                counter += 1;
                 unsigned int edge1 = random_int(edge_list.size(), gen_);
                 unsigned int edge2 = random_int(edge_list.size(), gen_);
                 if (edge1 != edge2)

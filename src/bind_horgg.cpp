@@ -59,5 +59,7 @@ PYBIND11_MODULE(_horgg, m)
 
             Args:
                mcmc_step: unsigned int for the number of edge swaps to perform
-            )pbdoc", py::arg("mcmc_step") = 0);
+               max_attempts: unsigned int for the max number of edge swaps
+                             attempts for a single mcmc step.
+            )pbdoc", py::arg("mcmc_step") = 0, py::arg("max_attempts") = 1000);
 }
