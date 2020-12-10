@@ -46,11 +46,8 @@ typedef unsigned int Node, Group;
 typedef pcg32 RNGType;
 typedef std::vector<std::pair<Node,Group> > EdgeList;
 typedef std::unordered_set<std::pair<Node,Group> > EdgeSet;
-typedef std::vector<std::vector<Group> > GroupAdjacency;
-typedef std::vector<std::vector<Node> > NodeAdjacency;
 typedef std::vector<unsigned int> MembershipSequence;
 typedef std::vector<unsigned int> GroupSizeSequence;
-typedef std::pair<GroupAdjacency,NodeAdjacency> Output;
 
 //Base class to contain the shared RNG for derived template classes
 class BaseGenerator
@@ -72,7 +69,7 @@ public:
             const GroupSizeSequence& group_size_sequence);
 
     //graph generation methods
-    Output get_graph(unsigned int mcmc_step=0, unsigned int max_attempts=1000);
+    EdgeList get_graph(unsigned int mcmc_step=0, unsigned int max_attempts=1000);
 
 private:
     bool is_bigraphic(const std::vector<unsigned int>& seq1,

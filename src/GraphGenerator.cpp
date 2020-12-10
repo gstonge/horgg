@@ -83,7 +83,7 @@ BipartiteConfigurationModelSampler::BipartiteConfigurationModelSampler(
 }
 
 //generate a random bipartite graph
-Output BipartiteConfigurationModelSampler::get_graph(unsigned int mcmc_step,
+EdgeList BipartiteConfigurationModelSampler::get_graph(unsigned int mcmc_step,
         unsigned int max_attempts)
 {
     //shuffle the stub vectors and get an edge list
@@ -162,16 +162,7 @@ Output BipartiteConfigurationModelSampler::get_graph(unsigned int mcmc_step,
         }
     }
 
-    //output the adjacency lists
-    GroupAdjacency group_adjacency(largest_node_label_+1,vector<Group>());
-    NodeAdjacency node_adjacency(largest_group_label_+1,vector<Node>());
-
-    for (auto& edge : edge_list)
-    {
-        group_adjacency[edge.first].push_back(edge.second);
-        node_adjacency[edge.second].push_back(edge.first);
-    }
-    return make_pair(group_adjacency,node_adjacency);
+    return edge_list;
 }
 
 //verify if two sequences are bigraphic
