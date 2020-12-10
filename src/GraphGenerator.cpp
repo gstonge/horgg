@@ -83,7 +83,7 @@ BipartiteConfigurationModelSampler::BipartiteConfigurationModelSampler(
 }
 
 //generate a random bipartite graph
-Output BipartiteConfigurationModelSampler::get_graph(unsigned int mcmc_step,
+EdgeList BipartiteConfigurationModelSampler::get_graph(unsigned int mcmc_step,
         unsigned int max_attempts)
 {
     //shuffle the stub vectors and get an edge list
@@ -140,38 +140,29 @@ Output BipartiteConfigurationModelSampler::get_graph(unsigned int mcmc_step,
                 unsigned int edge2 = random_int(edge_list.size(), gen_);
                 if (edge1 != edge2)
                 {
+                    Node node1 = edge_list[edge1].first;
+                    Node node2 = edge_list[edge2].first;
                     Group group1 = edge_list[edge1].second;
                     Group group2 = edge_list[edge2].second;
-                    // Switch stubs
-                    edge_list[edge1].second = group2;
-                    edge_list[edge2].second = group1;
-                    // verify it has not created multi-edge
-                    if (edge_set.count(edge_list[edge1]) > 0 or
-                            edge_set.count(edge_list[edge2]) > 0)
-                    {
-                        //revert
-                        edge_list[edge1].second = group1;
-                        edge_list[edge2].second = group2;
-                    }
-                    else
+                    if (edge_set.count(make_pair(node1,group2)) == 0
+                            and edge_set.count(make_pair(node2,group1)) == 0)
                     {
                         new_link = true;
+                        // Switch stubs
+                        edge_list[edge1].second = group2;
+                        edge_list[edge2].second = group1;
+                        //remove old edges and add new ones
+                        edge_set.erase(make_pair(node1,group1));
+                        edge_set.erase(make_pair(node2,group2));
+                        edge_set.insert(make_pair(node1,group2));
+                        edge_set.insert(make_pair(node2,group1));
                     }
                 }
             }
         }
     }
 
-    //output the adjacency lists
-    GroupAdjacency group_adjacency(largest_node_label_+1,vector<Group>());
-    NodeAdjacency node_adjacency(largest_group_label_+1,vector<Node>());
-
-    for (auto& edge : edge_list)
-    {
-        group_adjacency[edge.first].push_back(edge.second);
-        node_adjacency[edge.second].push_back(edge.first);
-    }
-    return make_pair(group_adjacency,node_adjacency);
+    return edge_list;
 }
 
 //verify if two sequences are bigraphic
