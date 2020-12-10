@@ -140,22 +140,22 @@ EdgeList BipartiteConfigurationModelSampler::get_graph(unsigned int mcmc_step,
                 unsigned int edge2 = random_int(edge_list.size(), gen_);
                 if (edge1 != edge2)
                 {
+                    Node node1 = edge_list[edge1].first;
+                    Node node2 = edge_list[edge2].first;
                     Group group1 = edge_list[edge1].second;
                     Group group2 = edge_list[edge2].second;
-                    // Switch stubs
-                    edge_list[edge1].second = group2;
-                    edge_list[edge2].second = group1;
-                    // verify it has not created multi-edge
-                    if (edge_set.count(edge_list[edge1]) > 0 or
-                            edge_set.count(edge_list[edge2]) > 0)
-                    {
-                        //revert
-                        edge_list[edge1].second = group1;
-                        edge_list[edge2].second = group2;
-                    }
-                    else
+                    if (edge_set.count(make_pair(node1,group2)) == 0
+                            and edge_set.count(make_pair(node2,group1)) == 0)
                     {
                         new_link = true;
+                        // Switch stubs
+                        edge_list[edge1].second = group2;
+                        edge_list[edge2].second = group1;
+                        //remove old edges and add new ones
+                        edge_set.erase(make_pair(node1,group1));
+                        edge_set.erase(make_pair(node2,group2));
+                        edge_set.insert(make_pair(node1,group2));
+                        edge_set.insert(make_pair(node2,group1));
                     }
                 }
             }
