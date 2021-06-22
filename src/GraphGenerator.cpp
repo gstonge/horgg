@@ -180,6 +180,21 @@ bool BipartiteConfigurationModelSampler::is_bigraphic(
     //check the other condition for the Gale–Ryser theorem
     vector<unsigned int> seq1_copy(seq1);
     vector<unsigned int> seq2_copy(seq2);
+    //patch shortest sequence with 0s
+    if (seq1_copy.size() < seq2_copy.size())
+    {
+        for (int i = 0; i < (seq2_copy.size() - seq1_copy.size()); i++)
+        {
+            seq1_copy.push_back(0);
+        }
+    }
+    else
+    {
+        for (int i = 0; i < (seq1_copy.size() - seq2_copy.size()); i++)
+        {
+            seq2_copy.push_back(0);
+        }
+    }
     sort(seq1_copy.begin(),seq1_copy.end(),greater<unsigned int>()); //descend
     sort(seq2_copy.begin(),seq2_copy.end()); //ascend
     vector<unsigned int> cum_seq1;
