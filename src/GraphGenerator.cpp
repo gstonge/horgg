@@ -48,13 +48,15 @@ void BaseGenerator::seed(unsigned int seed_value)
  * BipartiteConfigurationModelSampler
  * ======================================== */
 
-//Constructor of the bipartite configuration model generator
+//Constructor using membership and group size sequences
 BipartiteConfigurationModelSampler::BipartiteConfigurationModelSampler(
         const MembershipSequence& membership_sequence,
         const GroupSizeSequence& group_size_sequence):
     group_stub_vector_(),node_stub_vector_(),
     largest_group_label_(group_size_sequence.size()-1),
-    largest_node_label_(membership_sequence.size()-1)
+    largest_node_label_(membership_sequence.size()-1),
+    edge_list_(),
+    edge_set_()
 {
     try
     {
@@ -80,19 +82,50 @@ BipartiteConfigurationModelSampler::BipartiteConfigurationModelSampler(
             group_stub_vector_.push_back(i);
         }
     }
+
+    //initialize with stub matching
+    stub_matching();
 }
 
-//generate a random bipartite graph
-EdgeList BipartiteConfigurationModelSampler::get_graph(unsigned int mcmc_step,
-        unsigned int max_attempts)
+
+//Constructor using membership and group size sequences
+BipartiteConfigurationModelSampler::BipartiteConfigurationModelSampler(
+        const EdgeList& edge_list):
+    group_stub_vector_(),node_stub_vector_(),
+    largest_group_label_(0),
+    largest_node_label_(0),
+    edge_list_(edge_list),
+    edge_set_(edge_list_.begin(),edge_list_.end())
 {
-    //shuffle the stub vectors and get an edge list
+    //determine largest labels and initialize node and group stub vector
+    for (auto& edge : edge_list_)
+    {
+        Node node = edge.first;
+        Group group = edge.second;
+        if (node > largest_node_label_)
+        {
+            largest_node_label_ = node;
+        }
+        if (group > largest_group_label_)
+        {
+            largest_group_label_ = group;
+        }
+        node_stub_vector_.push_back(node);
+        group_stub_vector_.push_back(group);
+    }
+}
+
+
+//make the edge list the result of a stub matching
+void BipartiteConfigurationModelSampler::stub_matching()
+{
+    //shuffle the stub vectors and get a new edge list
     shuffle(group_stub_vector_.begin(),group_stub_vector_.end(),gen_);
     shuffle(node_stub_vector_.begin(),node_stub_vector_.end(),gen_);
-    EdgeList edge_list;
+    edge_list_ = EdgeList();
     for (int i = 0; i < node_stub_vector_.size(); i++)
     {
-        edge_list.push_back(make_pair(node_stub_vector_[i],
+        edge_list_.push_back(make_pair(node_stub_vector_[i],
                     group_stub_vector_[i]));
     }
 
@@ -101,68 +134,73 @@ EdgeList BipartiteConfigurationModelSampler::get_graph(unsigned int mcmc_step,
     while (faulty_links)
     {
         faulty_links = false;
-        sort(edge_list.begin(),edge_list.end());
-        for (size_t edge1=0; edge1<edge_list.size(); edge1++)
+        sort(edge_list_.begin(),edge_list_.end());
+        for (size_t edge1=0; edge1<edge_list_.size(); edge1++)
         {
             // If the link is faulty, rewire the stubs
-            if (edge_list[edge1] == edge_list[(edge1+1)% edge_list.size()])
+            if (edge_list_[edge1] == edge_list_[(edge1+1)% edge_list_.size()])
             {
                 faulty_links = true;
-                Node node1 = edge_list[edge1].first;
-                Group group1 = edge_list[edge1].second;
-                unsigned int edge2 = random_int(edge_list.size(), gen_);
-                Node node2 = edge_list[edge2].first;
-                Group group2 = edge_list[edge2].second;
+                Node node1 = edge_list_[edge1].first;
+                Group group1 = edge_list_[edge1].second;
+                unsigned int edge2 = random_int(edge_list_.size(), gen_);
+                Node node2 = edge_list_[edge2].first;
+                Group group2 = edge_list_[edge2].second;
                 // Switch stubs
-                edge_list[edge1].second = group2;
-                edge_list[edge2].second = group1;
+                edge_list_[edge1].second = group2;
+                edge_list_[edge2].second = group1;
             }
         }
     }
+
+    edge_set_ = EdgeSet(edge_list_.begin(),edge_list_.end());
+}
+
+void BipartiteConfigurationModelSampler::mcmc_step()
+{
+    bool same_edge = true;
+    while (same_edge)
+    {
+        unsigned int edge1 = random_int(edge_list_.size(), gen_);
+        unsigned int edge2 = random_int(edge_list_.size(), gen_);
+        if (edge1 != edge2)
+        {
+            same_edge = false;
+            Node node1 = edge_list_[edge1].first;
+            Node node2 = edge_list_[edge2].first;
+            Group group1 = edge_list_[edge1].second;
+            Group group2 = edge_list_[edge2].second;
+            if (edge_set_.count(make_pair(node1,group2)) == 0
+                    and edge_set_.count(make_pair(node2,group1)) == 0)
+            {
+                // Switch stubs
+                edge_list_[edge1].second = group2;
+                edge_list_[edge2].second = group1;
+                //remove old edges and add new ones
+                edge_set_.erase(make_pair(node1,group1));
+                edge_set_.erase(make_pair(node2,group2));
+                edge_set_.insert(make_pair(node1,group2));
+                edge_set_.insert(make_pair(node2,group1));
+            }
+            //otherwise do nothing (the move is rejected)
+        }
+    }
+}
+
+//generate a random bipartite graph -- uses stub matching + mcmc
+const EdgeList& BipartiteConfigurationModelSampler::get_random_graph(
+        unsigned int nb_steps)
+{
+    //start from a new stub matching process
+    stub_matching();
 
     //perform additional mcmc steps to ensure uniformity
-    if (mcmc_step > 0)
+    for(int i = 0; i < nb_steps; i++)
     {
-        EdgeSet edge_set(edge_list.begin(),edge_list.end());
-        for(int i = 0; i < mcmc_step; i++)
-        {
-            bool new_link = false;
-            unsigned int counter = 0;
-            while (not new_link)
-            {
-                if (counter == max_attempts)
-                {
-                   throw runtime_error(
-                           "Maximal number of edge swap attempts reached");
-                }
-                counter += 1;
-                unsigned int edge1 = random_int(edge_list.size(), gen_);
-                unsigned int edge2 = random_int(edge_list.size(), gen_);
-                if (edge1 != edge2)
-                {
-                    Node node1 = edge_list[edge1].first;
-                    Node node2 = edge_list[edge2].first;
-                    Group group1 = edge_list[edge1].second;
-                    Group group2 = edge_list[edge2].second;
-                    if (edge_set.count(make_pair(node1,group2)) == 0
-                            and edge_set.count(make_pair(node2,group1)) == 0)
-                    {
-                        new_link = true;
-                        // Switch stubs
-                        edge_list[edge1].second = group2;
-                        edge_list[edge2].second = group1;
-                        //remove old edges and add new ones
-                        edge_set.erase(make_pair(node1,group1));
-                        edge_set.erase(make_pair(node2,group2));
-                        edge_set.insert(make_pair(node1,group2));
-                        edge_set.insert(make_pair(node2,group1));
-                    }
-                }
-            }
-        }
+        mcmc_step();
     }
 
-    return edge_list;
+    return edge_list_;
 }
 
 //verify if two sequences are bigraphic
