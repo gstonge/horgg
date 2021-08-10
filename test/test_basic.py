@@ -12,53 +12,28 @@ from horgg import BCMS
 
 class TestOutput:
     """Tests for the properties of the generated bipartite graphs"""
-    def test_sum_preserved_1(self):
-        m_list = [2,2,2]
-        n_list = [2,2,2]
-        graph_generator = BCMS(m_list,n_list)
-        group_adj,node_adj = graph_generator.get_graph()
-        assert m_list == [len(group_adj[n]) for n in range(len(group_adj))]
-        assert n_list == [len(node_adj[g]) for g in range(len(node_adj))]
-
-    def test_sum_preserved_2(self):
-        m_list = [1,2,3,4]
-        n_list = [1,2,3,4]
-        graph_generator = BCMS(m_list,n_list)
-        group_adj,node_adj = graph_generator.get_graph()
-        assert m_list == [len(group_adj[n]) for n in range(len(group_adj))]
-        assert n_list == [len(node_adj[g]) for g in range(len(node_adj))]
 
     def test_different_graph_1(self):
         m_list = [2]*5
         n_list = [2]*5
         graph_generator = BCMS(m_list,n_list)
         BCMS.seed(42)
-        group_adj_1,node_adj_1 = graph_generator.get_graph()
+        edge_list1 = graph_generator.get_random_graph()
         graph_generator = BCMS(m_list,n_list)
         BCMS.seed(42)
-        group_adj_2,node_adj_2 = graph_generator.get_graph(1)
-        assert group_adj_1 != group_adj_2 and node_adj_1 != node_adj_2
+        edge_list2 = graph_generator.get_random_graph(10)
+        assert edge_list1 != edge_list2
 
     def test_different_graph_2(self):
         m_list = [2]*5
         n_list = [2]*5
         graph_generator = BCMS(m_list,n_list)
         BCMS.seed(42)
-        group_adj_1,node_adj_1 = graph_generator.get_graph(1)
+        edge_list1 = graph_generator.get_random_graph(10)
         graph_generator = BCMS(m_list,n_list)
         BCMS.seed(42)
-        group_adj_2,node_adj_2 = graph_generator.get_graph(2)
-        assert group_adj_1 != group_adj_2 and node_adj_1 != node_adj_2
-
-    def test_throw_error_max_attempts(self):
-        #there is one graph possible
-        m_list = [1,2,3,4]
-        n_list = [1,2,3,4]
-        graph_generator = BCMS(m_list,n_list)
-        with pytest.raises(RuntimeError):
-            group_adj,node_adj = graph_generator.get_graph(
-                mcmc_step=10,max_attempts=10)
-
+        edge_list2 = graph_generator.get_random_graph(100)
+        assert edge_list1 != edge_list2
 
 
 class TestBigraphicSeq:

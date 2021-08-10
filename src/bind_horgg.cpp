@@ -38,13 +38,21 @@ PYBIND11_MODULE(_horgg, m)
             "BCMS")
 
         .def(py::init<vector<unsigned int>, vector<unsigned int> >(), R"pbdoc(
-            Default constructor of the class BCMS
+            Constructor of the class BCMS when given membership and group size
+            sequences.
 
             Args:
                membership_sequence: Sequence of membership
                group_size_sequence: Sequence of group size
             )pbdoc", py::arg("membership_sequence"),
                 py::arg("group_size_sequence"))
+
+        .def(py::init<EdgeList>(), R"pbdoc(
+            Constructor of the class BCMS when an edge list.
+
+            Args:
+               edge_list: Edge list for the bipartite graph.
+            )pbdoc", py::arg("edge_list"))
 
         .def_static("seed", &BaseGenerator::seed, R"pbdoc(
             Seed the RNG with a new value.
@@ -55,11 +63,22 @@ PYBIND11_MODULE(_horgg, m)
 
         .def("get_graph", &BipartiteConfigurationModelSampler::get_graph,
                 R"pbdoc(
-            Create a random edge list from the configuration model.
+            Get the current graph state.
+
+            )pbdoc")
+
+        .def("mcmc_step", &BipartiteConfigurationModelSampler::mcmc_step,
+                R"pbdoc(
+            Make one edge swap if possible.
+
+            )pbdoc")
+
+        .def("get_random_graph", &BipartiteConfigurationModelSampler::get_random_graph,
+                R"pbdoc(
+            Create a random edge list from the configuration model using
+            stub matching and mcmc.
 
             Args:
-               mcmc_step: unsigned int for the number of edge swaps to perform
-               max_attempts: unsigned int for the max number of edge swaps
-                             attempts for a single mcmc step.
-            )pbdoc", py::arg("mcmc_step") = 0, py::arg("max_attempts") = 1000);
+               nb_steps: unsigned int for the number of edge swaps to perform
+            )pbdoc", py::arg("nb_steps") = 0);
 }

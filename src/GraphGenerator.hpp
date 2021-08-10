@@ -59,7 +59,7 @@ class BaseGenerator
 };
 
 /*
- * Class to sample bipartite configuration model graphs using MCMC
+ * Class to sample simple bipartite configuration model graphs using MCMC
  */
 class BipartiteConfigurationModelSampler : public BaseGenerator
 {
@@ -68,8 +68,15 @@ public:
             const MembershipSequence& membership_sequence,
             const GroupSizeSequence& group_size_sequence);
 
-    //graph generation methods
-    EdgeList get_graph(unsigned int mcmc_step=0, unsigned int max_attempts=1000);
+    BipartiteConfigurationModelSampler(const EdgeList& edge_list);
+
+    //accessor
+    const EdgeList& get_graph() {return edge_list_;}
+
+    //mutator
+    void mcmc_step();
+
+    const EdgeList& get_random_graph(unsigned int nb_steps=0);
 
 private:
     bool is_bigraphic(const std::vector<unsigned int>& seq1,
@@ -79,6 +86,10 @@ private:
     unsigned int largest_node_label_;
     std::vector<Group> group_stub_vector_;
     std::vector<Node> node_stub_vector_;
+    EdgeList edge_list_;
+    EdgeSet edge_set_;
+    //utility method
+    void stub_matching();
 };
 
 inline unsigned int random_int(std::size_t size, RNGType& gen)
